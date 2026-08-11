@@ -1,0 +1,36 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/receipt_extraction
+      SYNC_DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/receipt_extraction
+      UPLOAD_DIR: /tmp/receipt-extraction-uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/tmp/receipt-extraction-uploads
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: receipt_extraction
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d receipt_extraction"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  uploads:
